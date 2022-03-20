@@ -53,7 +53,7 @@ local matrix = {
         if (type(a) == "table" and type(b) == "number") or (type(a) == "number" and type(b) == "table") then
             local A, B
             if (type(a) == table) then
-                if (a.type ~= "mat") then error("matnummul: bad types") end
+                if (a.type ~= "mat") then error("bad types",2) end
                 A = a
                 B = b
             else
@@ -70,12 +70,12 @@ local matrix = {
             end
             return m
         elseif (type(a) == "table" and type(b) == "table") then
-            if (a.type ~= "mat" and b.type ~= "mat") then error("matmatmul: bad types") end
+            if (a.type ~= "mat" and b.type ~= "mat") then error("bad types",2) end
             local aSize = a:getSize()
             local bSize = b:getSize()
             local ay, ax = aSize.y, aSize.x
             local by, bx = bSize.y, bSize.x
-            if (ax ~= by) then error("matmul: invalid size match") end
+            if (ax ~= by) then error("invalid size match",2) end
             local m = mat(bx,ay)
             for i=1,ay do
                 for j=1,bx do
@@ -87,7 +87,7 @@ local matrix = {
             end
             return m
         else
-            error("MAT: MUL: bad input")
+            error("bad input",2)
         end
     end,
     set = function ( a, x, y, val )
@@ -117,6 +117,8 @@ local matrix = {
         end
     end,
     determinant = function(a)
+        local size = a:getSize()
+        if (size.x ~= size.y) then error("Invalid dimensions",2) end
         local det2x2 = function(a) 
             return a[1]*a[4]-a[2]*a[3]
         end
@@ -140,8 +142,6 @@ local matrix = {
             m4:fill({a:get(1,2),a:get(2,2),a:get(3,2),a:get(1,3),a:get(2,3),a:get(3,3),a:get(1,4),a:get(2,4),a:get(3,4)})
             return a:get(1,1) * m1:det() - a:get(2,1) * m2:det() + a:get(3,1) * m3:det() - a:get(4,1) * m4:det()
         end
-        local size = a:getSize()
-        if (size.x ~= size.y) then error("Invalid dimensions") end
         size = size.x
         if (size == 2) then
             return det2x2(a)
@@ -152,7 +152,7 @@ local matrix = {
         end
     end,
     pow = function(a,b)
-        if (a.xSize ~= a.ySize) then error("matpower: base matrix must be square",2) end
+        if (a.xSize ~= a.ySize) then error("base matrix must be square",2) end
         if (math.floor(b) ~= b or b < 0) then error("matpower: bad power",2) end
         if (b == 0) then return (mat().identity(a.xSize)) end
         local product = a
@@ -162,7 +162,7 @@ local matrix = {
         return product
     end,
     exp = function(a, it) 
-        if (math.floor(it) ~= it or it <= 0) then error("matexp: bad it count",2) end
+        if (math.floor(it) ~= it or it <= 0) then error("bad iteration count",2) end
         local sum = mat().identity(a.xSize)
         for i=1,it do
             local part = ((1/mathb.factorial(i)) * a:pow(i))
@@ -172,7 +172,7 @@ local matrix = {
     end,
     fakeln = function(A)
         if not (A.xSize == 2 and A.ySize == 2 and A[1] == A[4] and A[2] == -A[3]) then
-            error("bad input")
+            error("bad input, please use complex form matrix",2)
         end
         local a = A[1]
         local b = -A[2]
@@ -182,7 +182,7 @@ local matrix = {
         local d = t
         local m = mat(2,2)
         m:fill({c,-d,d,c})
-        debugLog({a=a, b=b,r=r,t=t,c=c,d=d,m=m},"yeet")
+        -- debugLog({a=a, b=b,r=r,t=t,c=c,d=d,m=m},"yeet")
         return m
     end,
     minus = function(a)
@@ -192,7 +192,14 @@ local matrix = {
         return a
     end,
     inverse = function(a)
-        if (a.xSize ~= a.ySize) then error("MatInverse: Matrix needs to be square") end
+        if (a.xSize ~= a.ySize) then error("MatInverse: Matrix needs to be square",2) end
+        if (a:det() == 0) then error("MatInverse: determinant cannot be 0",2) end
+        if (a.xSize == 2) then
+            local det = a:det()
+            a:fill({a[4],-a[2],-a[3],a[1]})
+            a = (1/det) * a
+            return a
+        end
     end
 }
 
